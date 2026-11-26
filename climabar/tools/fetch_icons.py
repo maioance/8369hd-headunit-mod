@@ -125,7 +125,7 @@ def fan_panel(cache, assets):
 
 NOTE_PX = 36                               # music note on the "now playing" cover
 # Home widgets (vehicle data from the CAN box): one symbol per chip, white-grey
-WIDGET_ICONS = [('w_temp', 'device_thermostat'), ('w_fuel', 'local_gas_station'), ('w_battery', 'battery_full')]
+WIDGET_ICONS = [('w_temp', 'device_thermostat'), ('w_fuel', 'local_gas_station'), ('w_battery', 'charger')]
 WIDGET_ICON_PX = 30
 
 # temperature in Noto Sans (same family as the labels): one image per glyph, all the same height
