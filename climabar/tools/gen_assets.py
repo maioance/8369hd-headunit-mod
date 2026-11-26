@@ -139,6 +139,16 @@ def main(assets, layout_path, out):
                   f'#define NP_TITLE_COLOR {col("title_color")}', f'#define NP_ARTIST_COLOR {col("artist_color")}',
                   f'#define NP_HIDE_IN_PROJECTION {int(bool(np.get("hide_in_projection", True)))}']
 
+    hw = lay.get('home_widgets', {})
+    lines += [f'#define HOME_WIDGETS {int(bool(hw.get("enabled")))}']
+    if hw.get('enabled'):
+        hexcol = lambda k: f'0x{int(hw[k].lstrip("#"), 16):06x}u'
+        lines += font_atlas('FONT_WIDGET', hw['font'], hw['font_px'], '°')
+        lines += [f'#define HW_Y {hw["y"]}', f'#define HW_W {hw["chip_w"]}', f'#define HW_H {hw["chip_h"]}',
+                  f'#define HW_GAP {hw["gap"]}', f'#define HW_RADIUS {hw["radius"]}', f'#define HW_COLOR {hexcol("color")}',
+                  f'#define HW_GLASS {hexcol("glass")}', f'#define HW_GLASS_ALPHA {hw["glass_alpha"]}',
+                  f'#define HW_LINE_ALPHA {hw["line_alpha"]}']
+
     os.makedirs(os.path.dirname(out), exist_ok=True)
     open(out, 'w').write('\n'.join(lines) + '\n')
 

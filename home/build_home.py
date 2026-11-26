@@ -78,8 +78,12 @@ APPS = {0: 'cable',                   # USB CarPlay
         8: 'mode_fan'}                # climate
 APPS_REMOVE = {1}
 APP_INSET_X, APP_TOP, APP_BOTTOM, APP_RADIUS = 9, 4, 200, 22
-APP_COLS = (88, 371, 654)
+# all eight apps on one page (no hidden second page): 4 columns x 2 rows of 232 x 211 buttons, centred. The Apps
+# cards (glass, large symbol, no ring) stay unlike Home's tiles, and the status bar says "Apps".
+APP_W = 232
+APP_COLS = tuple((1024 - 4 * APP_W) // 2 + c * APP_W for c in range(4))
 APP_ROWS = (78, 290)
+APP_LABEL = 0x3c4             # the label's rectangle in a button record, relative to the button
 APP_SYMBOL_PX, APP_SYMBOL_CY = 84, 78
 
 BTN_TEXT, STR_RECT, STR_FONT, STR_COL, STR_ALIGN = 0x110, 0x19c, 0x1ac, 0x1b0, 0x1c8
@@ -704,7 +708,7 @@ def apps(src, out):
     u = UiData(open(src, 'rb').read())
     pressed_of = {}
     for k, symbol in APPS.items():
-        size = struct.unpack_from('<II', u.images[k], 4)
+        size = (APP_W, struct.unpack_from('<II', u.images[k], 4)[1])
         u.images[k] = image_blob(app_card(size, symbol, False))
         pressed_of[k] = len(u.images)
         u.images.append(image_blob(app_card(size, symbol, True)))
@@ -712,18 +716,15 @@ def apps(src, out):
         u.images[k] = image_blob(Image.new('RGBA', struct.unpack_from('<II', u.images[k], 4), (0, 0, 0, 0)))
     w, base = u.windows[0]
     raw = bytearray(w.raw)
-    for t, rel in w.children(base):
-        if t == 1:
-            x, y = struct.unpack_from('<ii', raw, rel + 0xd4)
-            page, col = divmod(x, 1024)
-            col = min(range(3), key=lambda c: abs(col - (100, 385, 670)[c]))
-            row = 0 if y < 200 else 1
-            struct.pack_into('<ii', raw, rel + 0xd4, page * 1024 + APP_COLS[col], APP_ROWS[row])
-            normal = struct.unpack_from('<i', raw, rel + 0xe4)[0]
-            struct.pack_into('<ii', raw, rel + 0xe8, pressed_of[normal], pressed_of[normal])
-            col_at = raw.find(APP_TEXT_STOCK, rel, rel + struct.unpack_from('<I', raw, rel)[0])
-            assert col_at > 0, 'app button text colours not found'
-            struct.pack_into('<III', raw, col_at, bgr(TEXT), bgr(TEXT), bgr(TEXT))
+    for i, rel in enumerate(rel for t, rel in w.children(base) if t == 1):   # in order; all on page 1
+        row, col = divmod(i, 4)
+        struct.pack_into('<iiI', raw, rel + 0xd4, APP_COLS[col], APP_ROWS[row], APP_W)
+        struct.pack_into('<iiII', raw, rel + APP_LABEL, 0, 150, APP_W, 30)
+        normal = struct.unpack_from('<i', raw, rel + 0xe4)[0]
+        struct.pack_into('<ii', raw, rel + 0xe8, pressed_of[normal], pressed_of[normal])
+        col_at = raw.find(APP_TEXT_STOCK, rel, rel + struct.unpack_from('<I', raw, rel)[0])
+        assert col_at > 0, 'app button text colours not found'
+        struct.pack_into('<III', raw, col_at, bgr(TEXT), bgr(TEXT), bgr(TEXT))
     u.windows[0] = (Window(bytes(raw), base), base)
     open(out, 'wb').write(u.build())
 

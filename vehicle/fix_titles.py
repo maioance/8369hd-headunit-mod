@@ -6,10 +6,16 @@ usage: fix_titles.py <stock Language dir> <out Language dir>
 import os
 import sys
 
-FILES = ('SystemBar.txt', 'Main.txt', 'Bt.txt')   # title bar, home menu, Bluetooth screens
+FILES = ('SystemBar.txt', 'Main.txt', 'Bt.txt', 'Link.txt')   # title bar, home menu, Bluetooth, link screens
 TITLES = {
     '空调': ('air conditioner', 'Air Conditioner'),
     '蓝牙连接名称：': ('Bluetooth Connection nameName:', 'Connected phone:'),
+    # BT Music with no track info from the phone: one short line instead of "Unknown" three times
+    '未知歌曲': ('Unknown song', 'No track info'),
+    '未知艺人': ('Unknown Artist', '-'),
+    '未知专辑': ('Unknown album', '-'),
+    # the wireless CarPlay / Android Auto connect screens (link/build_link.py)
+    '请使用手机连接蓝牙:': ('Please use your mobile phone to connect to Bluetooth:', "Connect your phone's Bluetooth to:"),
 }
 
 

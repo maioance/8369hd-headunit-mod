@@ -79,7 +79,7 @@ display layers, and offers functions that the patched init.axf calls.
   Auto video) and hides it after `show_seconds`. It also: sets the seat-belt flag the firmware's own belt control
   shows; learns station names from the RDS text (a name counts once it has been on air 3 s, stored in
   `E:\climabar_ps.bin`); draws the overlay layer (channel 1, layer 2: the big station name on the radio screen, the
-  door card, the now-playing card); manages Android Auto (below).
+  door card, the now-playing card, the Home widgets with the trip computer's data); manages Android Auto (below).
 - **Overlay layer:** layers of the same display channel do not blend, so where it draws, the module copies the GUI's
   pixels (channel 1, layer 0) under its drawing and blends itself, and only when the GUI is not mid-redraw. Wherever
   possible the firmware draws instead (handler hooks, like the preset names), which needs no copying.

@@ -28,7 +28,8 @@ their picker.
   preset buttons;
 - Android Auto starts only from the "Auto" button (not by itself when the phone connects, which used to take the
   phone's media away from Bluetooth music), and Bluetooth music comes back after Android Auto;
-- Bluetooth opens on BT Music; a short "now playing" card when the track changes.
+- Bluetooth opens on BT Music; a short "now playing" card when the track changes;
+- Home widgets: outside temperature, fuel and battery voltage from the CAN box, under the tiles.
 
 ## Repository
 

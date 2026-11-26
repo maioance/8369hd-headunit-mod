@@ -47,6 +47,7 @@ SONG_NAME_MARGIN = 30                     # the scrolling song name on the page 
 TABS = ['dialpad', 'history', 'person', 'bluetooth', 'music_note']
 TAB_ICON = 40                 # the label under the symbol is drawn by the firmware
 TAB_ICON_Y = 22               # top of the symbol inside the 210 x 106 tab
+TAB_INSET, TAB_RADIUS = 8, 14  # the selected tab's glass pill: margin inside the tab, corner radius
 
 # --- keypads: image index -> label (normal, pressed pairs); '<' = delete, 'call' = call key ----------
 DIAL_KEYS = {13: '1', 15: '2', 17: '3', 19: '*', 21: '<', 23: '4', 25: '5', 27: '6', 29: '0', 31: '+',
@@ -224,8 +225,9 @@ def restyle_tabs(u):
             done[k] = True
             size = size_of(u, k)
             im = Image.new('RGBA', size, (0, 0, 0, 0))
-            if selected:
-                im = Image.new('RGBA', size, GLASS + (GLASS_CARD_ALPHA,))                 # glass
+            if selected:                    # a rounded glass pill inside the tab (never touching the screen edge)
+                im.alpha_composite(glass((size[0] - 2 * TAB_INSET, size[1] - 2 * TAB_INSET), radius=TAB_RADIUS),
+                                   (TAB_INSET, TAB_INSET))
             sym = material(TABS[tab], TEXT, TAB_ICON)                  # white, also selected
             im.alpha_composite(sym, ((size[0] - sym.width) // 2, TAB_ICON_Y))
             u.images[k] = image_blob(im)
@@ -487,12 +489,28 @@ def scroll_texts(u, names, window):
     u.windows[window] = (Window(bytes(raw), base), base)
 
 
+PAIR_SYMBOL, PAIR_FONT_PX = 28, 22               # BT Setup's connect / disconnect buttons
+
+
+def labelled(base, sym, label):
+    """a symbol and a word side by side, centred as a group on the button"""
+    font = ImageFont.truetype(FONT, PAIR_FONT_PX)
+    d = ImageDraw.Draw(base)
+    gap = 10
+    tw = d.textlength(label, font=font)
+    x = round((base.width - (sym.width + gap + tw)) / 2)
+    base.alpha_composite(sym, (x, (base.height - sym.height) // 2))
+    d.text((x + sym.width + gap, base.height / 2), label, font=font, fill=TEXT + (255,), anchor='lm')
+    return base
+
+
 def bt_setup(u):
     restyle_common(u)
     u.images[10] = image_blob(glass(size_of(u, 10)))                                  # name / pin fields
-    for k, (name, pressed) in {11: ('link', 0), 12: ('link', 1), 13: ('link_off', 0), 14: ('link_off', 1)}.items():
-        size = size_of(u, k)
-        u.images[k] = image_blob(centred(glass(size, pressed), material(name, TEXT, round(size[1] * 0.55))))
+    for k, (name, label, pressed) in {11: ('link', 'Connect', 0), 12: ('link', 'Connect', 1),
+                                      13: ('link_off', 'Disconnect', 0), 14: ('link_off', 'Disconnect', 1)}.items():
+        size = size_of(u, k)                            # the buttons have no text field: symbol + label drawn in
+        u.images[k] = image_blob(labelled(glass(size, pressed), material(name, TEXT, PAIR_SYMBOL), label))
     u.images[15] = image_blob(glass((CONTENT[2] - 428, size_of(u, 15)[1])))          # connected phone
     content_margins(u)
     u.images[16] = image_blob(thin_line(size_of(u, 16)))

@@ -45,6 +45,9 @@ step "Trip computer, climate page"
 python3 "$ROOT/vehicle/build_carcomputer.py" "$FW/apps/Data/CarComputer.data" "$A/Data/CarComputer.data" >/dev/null
 python3 "$ROOT/vehicle/build_aircondition.py" "$FW/apps/Data/AirCondition.data" "$A/Data/AirCondition.data" >/dev/null
 
+step "CarPlay / Android Auto connect screens"
+python3 "$ROOT/link/build_link.py" "$FW/apps/Data" "$A/Data" "$ICONS" >/dev/null
+
 step "Setup"
 python3 "$ROOT/setup/build_setup.py" "$FW/apps/Data" "$A/Data" >/dev/null
 

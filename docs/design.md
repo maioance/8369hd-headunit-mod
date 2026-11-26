@@ -47,6 +47,11 @@ The stock firmware's accent was teal; stock art that keeps it is turned white-gr
 - **Lists** (Setup, Language, Radio PTY): see-through rows with a hairline; selected / pressed: glass + red bar.
 - **Sliders:** grey track, red fill. **Switches:** grey / red track, white knob.
 - **Icons:** Material Symbols Rounded (`climabar/icons_src/`), white-grey.
+- **Home widgets** (`climabar/layout.json` `home_widgets`): glass chips under the tiles, symbol + value (outside
+  temperature, fuel, battery); only on Home, only once the car has sent data, hidden while the climate strip is up.
+- **Apps:** all eight on one page (4 x 2), glass cards without the ring, so the screen does not read as Home.
+- **Connect screens** (wireless CarPlay / Android Auto): phone - link - car illustration, a short instruction, the
+  Bluetooth name to look for in white.
 - **Climate strip** (`climabar/layout.json`): A/C, AUTO, SYNC, air intake, MAX, REAR as symbol + label; temperatures in
   Noto Sans; the fan panel with 7 bars, or the airflow pictogram right after an airflow change.
 

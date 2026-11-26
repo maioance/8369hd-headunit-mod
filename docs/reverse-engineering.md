@@ -18,13 +18,13 @@ init.axf file offset = virtual address - `0xe9100000` + `0x16c`.
 
 | Address | What |
 |---|---|
-| `*(0xe932b210)` | decoded climate block: `+0` rear window, `+4` MAX front, `+8` DUAL, `+12/16` auto low / high, `+20` recirculation, `+24` A/C, `+28` fan, `+36/40/44` airflow windshield / face / feet, `+48/49` temperature left / right (VW: 0 = LO, 31 = HI, else 17.5 + 0.5 v), `+68` auto recirculation, `+104/168` seat belts, `+116..132` boot, doors RR / RL / FR / FL |
+| `*(0xe932b210)` | decoded climate block: `+0` rear window, `+4` MAX front, `+8` DUAL, `+12/16` auto low / high, `+20` recirculation, `+24` A/C, `+28` fan, `+36/40/44` airflow windshield / face / feet, `+48/49` temperature left / right (VW: 0 = LO, 31 = HI, else 17.5 + 0.5 v), `+68` auto recirculation, `+104/168` seat belts, `+112` vehicle data received, `+116..132` boot, doors RR / RL / FR / FL, `+136` engine speed (rpm), `+140` speed (0.01 km/h), `+144` battery (0.01 V), `+148` outside temperature (0.1 °C, signed), `+152` odometer (m), `+156` fuel (L) |
 | `*(0xe932ace0)` | current app: `+0` handle, `+24` descriptor, `+0` its name ("Main", "Radio", "Bt", "Can", "Link", ...) |
 | `0xe93284e8` | radio: `+0` band (0..2 FM), `+4` frequency (FM 10 kHz units, AM kHz), `+8` 6 presets per band |
 | `0xe93285b4` | RDS PS, 8 characters |
 | `0xe931eac0` | the PTY list is open over the radio screen |
 | `*(0xe9321080)` | Bluetooth object: `+12` state (2 = connected), `+0x60e` title, `+0x70e` artist, `+0x80e` album |
-| `0xe92df2e4` | page of the "Bt" app (201 = BT Music); `0xe92df3c8` page of "Can" (201 = vehicle info, 101 = climate) |
+| `0xe92df2e4` | page of the "Bt" app (201 = BT Music); `0xe92df3c8` page of "Can" (201 = vehicle info, 101 = climate); `0xe92df5c0` page of "Main" (Home: 101 at start-up, 1 after; Apps: 3) |
 | `0xe931e874` | seat-belt flag, read by the `ViewShowImageDashSeatBelt` handler |
 | `*(0xe9327dd8)` | link states, 2048 bytes per link; link 6 = wireless Android Auto, `+96` session active |
 | `0xe9328968` | settings; `+0xd8` the wallpaper path (`D:\apps\WallPaper\<n>.jpg`), saved in `E:\Save\SetupSave.bin` |

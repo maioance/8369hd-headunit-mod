@@ -144,5 +144,20 @@
     "title_color": "#dce2e4",
     "artist_color": "#8a9599",
     "hide_in_projection": true
+  },
+  "home_widgets": {
+    "_": "Home: a row of chips under the tiles with the trip computer's data from the CAN box (outside temperature, fuel, battery), shown once the car has sent vehicle data and hidden while the climate strip is up",
+    "enabled": true,
+    "y": 530,
+    "chip_w": 200,
+    "chip_h": 54,
+    "gap": 16,
+    "radius": 14,
+    "font": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf",
+    "font_px": 30,
+    "color": "#dce2e4",
+    "glass": "#c8e1e4",
+    "glass_alpha": 26,
+    "line_alpha": 46
   }
 }

@@ -17,7 +17,7 @@
 #define FB_PAGES ((FB_BYTES + 1023) / 1024)
 
 /* features that draw on the overlay layer */
-#define OVERLAY  (RADIO_NAME || DOORS || NOW_PLAYING || BT_TITLE)
+#define OVERLAY  (RADIO_NAME || DOORS || NOW_PLAYING || BT_TITLE || HOME_WIDGETS)
 
 /* ---- init.axf (8369HD, APP 20250320) addresses; firmware_ok() refuses any other init.axf ---- */
 /* pointer to the decoded climate state; doors and belts live in the same block */
@@ -26,7 +26,9 @@ enum { AC_REARLIGHT = 0, AC_MAXFRONT = 4, AC_DUAL = 8, AC_AUTOLOW = 12, AC_AUTOH
        AC_ON = 24, AC_FAN = 28, AC_FLOW_WINDSHIELD = 36, AC_FLOW_FACE = 40, AC_FLOW_FEET = 44,
        AC_TEMP_L = 48, AC_TEMP_R = 49, AC_AUTOCYCLE = 68, AC_SNAPSHOT = 72,
        AC_BOOT = 116, AC_DOOR_RR = 120, AC_DOOR_RL = 124, AC_DOOR_FR = 128, AC_DOOR_FL = 132,
-       AC_BELT_DRIVER = 104, AC_BELT_PASSENGER = 168 };
+       AC_BELT_DRIVER = 104, AC_BELT_PASSENGER = 168,
+       /* the trip computer's data from the CAN box (Raise 0x41 sub 2): AC_VEHICLE != 0 once some has come */
+       AC_VEHICLE = 112, AC_BATTERY = 144 /* 0.01 V */, AC_OUTSIDE = 148 /* 0.1 °C */, AC_FUEL = 156 /* litres */ };
 /* temperature codes: VW CAN box 0 = LO, 31 = HI, else 17.5 + 0.5 * v; other boxes use 254 / 255 */
 #define IS_TEMP_LO(c) ((c) == 0 || (c) == 254)
 #define IS_TEMP_HI(c) ((c) == 31 || (c) == 255)
@@ -41,6 +43,8 @@ enum { AC_REARLIGHT = 0, AC_MAXFRONT = 4, AC_DUAL = 8, AC_AUTOLOW = 12, AC_AUTOH
 #define BT_ID3_TITLE  0x60e                              /* + 0x100 artist, + 0x200 album */
 #define BT_PAGE       (*(volatile int32_t *)0xe92df2e4) /* page of the "Bt" app: 201 = BT Music */
 #define CAN_PAGE      (*(volatile int32_t *)0xe92df3c8) /* page of the "Can" app: 201 = Vehicle information, 101 = climate */
+#define MAIN_PAGE     (*(volatile int32_t *)0xe92df5c0) /* page of the "Main" app: Home 101 at start-up, 1 after, Apps 3 */
+#define HOME_SHOWN()  (app_is("Main") && (MAIN_PAGE == 1 || MAIN_PAGE == 101))
 #define BELT_WARN     (*(volatile int32_t *)0xe931e874) /* read by the "ViewShowImageDashSeatBelt" handler only */
 #define LINKS_PTR     ((uint8_t *volatile *)0xe9327dd8) /* link states, 2048 bytes per link (6 = Android Auto wireless) */
 #define LINK_AA_WIRELESS 6
@@ -50,6 +54,7 @@ enum { AC_REARLIGHT = 0, AC_MAXFRONT = 4, AC_DUAL = 8, AC_AUTOLOW = 12, AC_AUTOH
 static melis_mp g_mp;
 static int g_disp = -1;
 static volatile int g_quit;
+static int g_strip_on;                 /* the climate strip is shown (the Home widgets give way to it) */
 
 /* ---- diagnostic log: only when a USB stick holds an (empty) climabar_log.txt ----
  * Lines are kept in RAM and the file is rewritten at most once a second (log_flush, from the UI loop), so writing
@@ -514,6 +519,25 @@ static MAYBE_UNUSED void ov_blit_scaled(const img_t *im, int x, int y, int pct)
 	}
 }
 
+#if HOME_WIDGETS
+/* a widget's text: v (tenths when tenths != 0), then an optional two-byte UTF-8 unit sign (little end first: 0xb0c2 =
+ * c2 b0 = "°") or a space, then the unit letter. Built in place: no string constants (small data). */
+static void widget_text(char *b, int v, int tenths, int sign, char unit)
+{
+	int n = 0;
+	if (v < 0) { b[n++] = '-'; v = -v; }
+	int whole = tenths ? v / 10 : v;
+	char d[10];
+	int k = 0;
+	do { d[k++] = (char)('0' + whole % 10); whole /= 10; } while (whole && k < 9);
+	while (k) b[n++] = d[--k];
+	if (tenths) { b[n++] = '.'; b[n++] = (char)('0' + v % 10); }
+	if (sign) { b[n++] = (char)(sign & 0xff); b[n++] = (char)(sign >> 8); } else b[n++] = ' ';
+	b[n++] = unit;
+	b[n] = 0;
+}
+#endif
+
 static void overlay_init(void)
 {
 	g_ofb = esMEMS_Palloc(OV_PAGES);
@@ -588,9 +612,9 @@ static MAYBE_UNUSED void box_add(int *b, int x, int y, int w, int h)
 /* called from the UI loop every 50 ms; cs = the climate block (doors), or 0 */
 static void overlay_poll(const uint8_t *cs)
 {
-	static int on, name_on, door_on, door_shown, bt_on, np_on;
+	static int on, name_on, door_on, door_shown, bt_on, np_on, hw_on;
 	int dirty = 0;
-	(void)cs; (void)dirty; (void)door_shown; (void)bt_on; (void)np_on;
+	(void)cs; (void)dirty; (void)door_shown; (void)bt_on; (void)np_on; (void)hw_on;
 	if (!g_ofb) return;
 
 #if RADIO_NAME
@@ -741,7 +765,49 @@ static void overlay_poll(const uint8_t *cs)
 	}
 #endif
 
-	int any = name_on || door_on || bt_on || np_on;
+#if HOME_WIDGETS
+	{   /* Home: a row of glass chips under the tiles - outside temperature, fuel, battery - once the car has sent
+		 * vehicle data; hidden while the climate strip is up (it slides over this place) */
+		static char shown[3][16];
+		char t[3][16];
+		int want = cs && field(cs, AC_VEHICLE) && HOME_SHOWN() && !g_strip_on, changed = want != hw_on;
+		if (want) {
+			widget_text(t[0], field(cs, AC_OUTSIDE), 1, 0xb0c2, 'C');      /* "21.5°C" (° in UTF-8: c2 b0) */
+			widget_text(t[1], field(cs, AC_FUEL), 0, 0, 'L');              /* "45 L" */
+			widget_text(t[2], field(cs, AC_BATTERY) / 10, 1, 0, 'V');      /* "13.8 V" */
+			for (int k = 0; k < 3; k++)
+				for (int i = 0; i < 16 && !changed; i++) { if (t[k][i] != shown[k][i]) changed = 1; if (!t[k][i]) break; }
+		}
+		if (changed) {
+			int x0 = (OV_W - 3 * HW_W - 2 * HW_GAP) / 2;
+			ov_clear(x0, HW_Y, 3 * HW_W + 2 * HW_GAP, HW_H);
+			if (want) {
+				const img_t *ico[3] = { &IMG_W_TEMP, &IMG_W_FUEL, &IMG_W_BATTERY };
+				for (int k = 0; k < 3; k++) {
+					int x = x0 + k * (HW_W + HW_GAP);
+					for (int j = 0; j < HW_H; j++)                       /* glass chip with a thin outline */
+						for (int i = 0; i < HW_W; i++) {
+							uint32_t outer = round_cov(i, j, HW_W, HW_H, HW_RADIUS);
+							uint32_t inner = i && j && i < HW_W - 1 && j < HW_H - 1 ?
+							                 round_cov(i - 1, j - 1, HW_W - 2, HW_H - 2, HW_RADIUS - 1) : 0;
+							uint32_t a = ((outer - inner) * HW_LINE_ALPHA + inner * HW_GLASS_ALPHA) / 255;
+							g_ofb[(HW_Y + j) * OV_W + x + i] = a << 24 | HW_GLASS;
+						}
+					ov_blit(ico[k], x + 16, HW_Y + (HW_H - ico[k]->h) / 2);
+					int len = 0;
+					while (t[k][len]) len++;
+					int tx = x + 16 + ico[k]->w + 8, tw = x + HW_W - 12 - tx;    /* text centred right of the symbol */
+					draw_text(g_ofb + (HW_Y + (HW_H - FONT_WIDGET.h) / 2) * OV_W, OV_W, &FONT_WIDGET, t[k], len,
+					          tx + tw / 2, HW_COLOR);
+					for (int i = 0; i < 16; i++) shown[k][i] = t[k][i];
+				}
+			}
+			hw_on = want; dirty = 1;
+		}
+	}
+#endif
+
+	int any = name_on || door_on || bt_on || np_on || hw_on;
 	if (any) {
 		int b[4] = { OV_W, OV_H, 0, 0 };
 #if RADIO_NAME
@@ -755,6 +821,9 @@ static void overlay_poll(const uint8_t *cs)
 #endif
 #if BT_TITLE
 		if (bt_on) box_add(b, BT_TITLE_CX - BT_TITLE_W / 2, BT_TITLE_Y, BT_TITLE_W, FONT_BT_TITLE.h);
+#endif
+#if HOME_WIDGETS
+		if (hw_on) box_add(b, (OV_W - 3 * HW_W - 2 * HW_GAP) / 2, HW_Y, 3 * HW_W + 2 * HW_GAP, HW_H);
 #endif
 		if (b[0] < 0) b[0] = 0;
 		if (b[1] < 0) b[1] = 0;
@@ -794,6 +863,7 @@ static void slide(int dir)
 
 static void strip_show(int on)
 {
+	g_strip_on = on;
 	if (SLIDE_STEPS) slide(on ? 1 : -1);
 	else strip_offset(H, on);
 }

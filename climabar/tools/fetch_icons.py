@@ -124,6 +124,9 @@ def fan_panel(cache, assets):
 
 
 NOTE_PX = 36                               # music note on the "now playing" cover
+# Home widgets (vehicle data from the CAN box): one symbol per chip, white-grey
+WIDGET_ICONS = [('w_temp', 'device_thermostat'), ('w_fuel', 'local_gas_station'), ('w_battery', 'battery_full')]
+WIDGET_ICON_PX = 30
 
 # temperature in Noto Sans (same family as the labels): one image per glyph, all the same height
 DIGIT_FONT = '/usr/share/fonts/google-noto/NotoSans-Regular.ttf'
@@ -160,6 +163,8 @@ def main(assets, cache):
     digits(assets)
     # now playing card: note on the generated cover
     render(svg(cache, 'music_note'), '#ffffff', (NOTE_PX, NOTE_PX), os.path.join(assets, 'np_note.png'))
+    for name, symbol in WIDGET_ICONS:
+        render(svg(cache, symbol), '#dce2e4', (WIDGET_ICON_PX, WIDGET_ICON_PX), os.path.join(assets, name + '.png'))
     for name, (symbol, colour) in AIRFLOW.items():
         render(svg(cache, symbol), colour, (AIRFLOW_SIZE, AIRFLOW_SIZE), os.path.join(assets, name + '.png'))
     print(f'Material Symbols -> {assets}')
