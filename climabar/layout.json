@@ -1,0 +1,148 @@
+{
+  "_safety": "start_delay_seconds: the module waits this long after boot before touching the display. If a USB stick holds Update\\<update_file> (checked at start and every 2 s for the first 3 minutes, as sticks mount late), the module stops: its layers off, so a firmware update runs exactly as stock.",
+  "safety": {
+    "start_delay_seconds": 3,
+    "update_file": "8369HD.img"
+  },
+  "_comment": "Climabar layout. Coordinates are inside the strip (0,0 = its top-left corner). Sizes: tools/fetch_icons.py (ICON_SCALE, DIGIT_H, PANEL_SCALE; make icons). After a change run: make",
+  "strip": {
+    "y": 468,
+    "height": 132,
+    "background": "#0a1012",
+    "opacity": 230,
+    "show_seconds": 3,
+    "slide_ms": 200
+  },
+  "_center": "the middle of the strip shows the fan speed or the airflow: whichever was just changed; when the strip pops up because of something else it shows center_default (fan | airflow)",
+  "center_default": "fan",
+  "temp_left": {
+    "x": 20,
+    "y": 72,
+    "align": "left"
+  },
+  "temp_right": {
+    "x": 1004,
+    "y": 72,
+    "align": "right"
+  },
+  "fan_panel": {
+    "x": 270,
+    "y": 44
+  },
+  "fan_bars": [
+    [
+      138,
+      58
+    ],
+    [
+      169,
+      56
+    ],
+    [
+      201,
+      55
+    ],
+    [
+      232,
+      52
+    ],
+    [
+      265,
+      51
+    ],
+    [
+      296,
+      49
+    ],
+    [
+      328,
+      48
+    ]
+  ],
+  "airflow": {
+    "x": 461,
+    "y": 26
+  },
+  "icons": {
+    "ac": {
+      "x": 12,
+      "y": 4
+    },
+    "auto": {
+      "x": 114,
+      "y": 4
+    },
+    "sync": {
+      "x": 216,
+      "y": 4
+    },
+    "recirc": {
+      "x": 702,
+      "y": 4
+    },
+    "max_front": {
+      "x": 812,
+      "y": 4
+    },
+    "rear_defrost": {
+      "x": 914,
+      "y": 4
+    }
+  },
+  "_slide_ms": "slide in from the bottom / out when hiding, in milliseconds (0 = appear instantly)",
+  "_radio_name": "radio screen, where the stock big frequency is (radio/build_radio.py hides it): the live RDS PS, or the frequency while there is none; font / size / place of the stock digits (Noto Sans 61 px, digit tops at screen y 253)",
+  "radio_name": {
+    "enabled": true,
+    "x": 112,
+    "y": 231,
+    "w": 800,
+    "h": 84,
+    "font": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf",
+    "font_px": 61,
+    "color": "#dce2e4"
+  },
+  "_preset_names": "learned station names (RDS) on the preset buttons instead of the frequency; the firmware draws them (init.axf patch preset_names), saved in E:\\\\climabar_ps.bin",
+  "preset_names": {
+    "enabled": true
+  },
+  "_belt": "the seat-belt symbol is a control of the stock status bar (tools/add_belt_control.py, init.axf patch belt_binding): the module only tells the firmware whether a belt is unbuckled",
+  "belt": {
+    "enabled": true,
+    "hide_in_projection": true
+  },
+  "_doors": "car seen from above while a door / the boot is open (replaces the full-screen Vehicle information popup; needs the init.axf door_popup patch); x, y: top-left of the card on screen, scale: drawn this many times the art size",
+  "doors": {
+    "enabled": true,
+    "x": 288,
+    "y": 160,
+    "scale": 1.5,
+    "hide_after_ms": 1500
+  },
+  "_bt_title": "BT Music: song title (from the phone) in the title bar instead of \"Title\"; empty = text when the phone sends none",
+  "_bt_title_off": "the BT Music title bar shows the firmware's own title; font / font_px here are still used by the now_playing card",
+  "bt_title": {
+    "enabled": false,
+    "cx": 470,
+    "y": 18,
+    "max_w": 440,
+    "font": "/usr/share/fonts/google-noto/NotoSans-Regular.ttf",
+    "font_px": 24,
+    "color": "#d0d4d6",
+    "empty": "Bluetooth Music"
+  },
+  "_now_playing": "card when the BT song changes (not on BT Music, not in Android Auto / CarPlay): generated cover + title + artist",
+  "now_playing": {
+    "enabled": true,
+    "x": 262,
+    "y": 78,
+    "w": 500,
+    "h": 72,
+    "show_ms": 4000,
+    "cover": 56,
+    "bg": "#0a1012",
+    "opacity": 215,
+    "title_color": "#dce2e4",
+    "artist_color": "#8a9599",
+    "hide_in_projection": true
+  }
+}

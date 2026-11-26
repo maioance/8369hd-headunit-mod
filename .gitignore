@@ -1,0 +1,22 @@
+# Never in the repository (docs/building.md): the vendor firmware and anything extracted from it, the SDK, third-party
+# binary tools, flash dumps, built images, the device's own settings, local files (e.g. a boot logo).
+/firmware/
+/sdk/
+/tools/melis-tools/
+/build/
+/backup_flash/
+/backup_car_nav_stick_*/
+/releases/
+/udisk_config/
+/local/
+*.img
+*.fex
+*.axf
+
+# generated
+/climabar/build/
+/climabar/assets/
+/home/wallpapers_*/
+emulator_server.log
+__pycache__/
+*.pyc
